@@ -83,13 +83,12 @@ namespace ParamsArrayCallInLoop
             var variableAssignment = SyntaxFactory.VariableDeclaration(typeSyntax, declarator).WithAdditionalAnnotations(Formatter.Annotation);
             var assignmentExpression = SyntaxFactory.LocalDeclarationStatement(variableAssignment);
 
-            var docRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var forStatement = IsInSyntax<ForStatementSyntax>(paramsInvocation);
             var invocationParameterReplacement = new SeparatedSyntaxList<ArgumentSyntax>();
             invocationParameterReplacement = invocationParameterReplacement.AddRange(paramsInvocation.ArgumentList.Arguments.Take(method.Parameters.Length - 1));
             invocationParameterReplacement = invocationParameterReplacement.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("hoisted")));
             var newArgListSyntax = SyntaxFactory.ArgumentList(invocationParameterReplacement);
-            var newDeclaration = paramsInvocation.WithArgumentList(newArgListSyntax); SyntaxNode newRoot = null;
+            var newDeclaration = paramsInvocation.WithArgumentList(newArgListSyntax);
             
             var documentEditor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
             documentEditor.InsertBefore(forStatement, assignmentExpression);

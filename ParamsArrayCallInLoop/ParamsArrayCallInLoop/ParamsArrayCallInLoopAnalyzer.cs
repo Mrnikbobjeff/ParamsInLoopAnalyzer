@@ -19,7 +19,7 @@ namespace ParamsArrayCallInLoop
         private static readonly LocalizableString Description = new LocalizableResourceString(nameof(Resources.AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
         private const string Category = "Performance";
 
-        private static DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+        private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get { return ImmutableArray.Create(Rule); } }
 
@@ -44,10 +44,9 @@ namespace ParamsArrayCallInLoop
         private static void AnalyzeSymbol(SyntaxNodeAnalysisContext context)
         {
             var invocation = context.Node as InvocationExpressionSyntax;
-            var methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-            if (methodSymbol is null)
+            if (!(context.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol methodSymbol))
                 return;
-            if(methodSymbol.Parameters.Any() && methodSymbol.Parameters.Last().IsParams && (
+            if (methodSymbol.Parameters.Any() && methodSymbol.Parameters.Last().IsParams && (
                 IsInSyntax<ForEachStatementSyntax>(invocation) 
                 || IsInSyntax<ForStatementSyntax>(invocation)))
             {
