@@ -14,6 +14,7 @@ using Microsoft.CodeAnalysis.Rename;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
 using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Editing;
 
 namespace ParamsArrayCallInLoop
 {
@@ -60,6 +61,8 @@ namespace ParamsArrayCallInLoop
             } while (syntax.Parent != null);
             return null;
         }
+
+
         private async Task<Solution> HoistAssignment(Document document, InvocationExpressionSyntax paramsInvocation, CancellationToken cancellationToken)
         {
             var originalSolution = document.Project.Solution;
@@ -82,13 +85,20 @@ namespace ParamsArrayCallInLoop
 
             var docRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var forStatement = IsInSyntax<ForStatementSyntax>(paramsInvocation);
-            SyntaxNode newRoot = null;
-            if(forStatement != null)
-            {
-                newRoot = docRoot.InsertNodesBefore(forStatement, new[] { assignmentExpression });
-                newRoot = Formatter.Format(newRoot, Formatter.Annotation, document.Project.Solution.Workspace);
-            }
-            return originalSolution.WithDocumentSyntaxRoot(document.Id, newRoot);
+            var invocationParameterReplacement = new SeparatedSyntaxList<ArgumentSyntax>();
+            invocationParameterReplacement = invocationParameterReplacement.AddRange(paramsInvocation.ArgumentList.Arguments.Take(method.Parameters.Length - 1));
+            invocationParameterReplacement = invocationParameterReplacement.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("hoisted")));
+            var newArgListSyntax = SyntaxFactory.ArgumentList(invocationParameterReplacement);
+            var newDeclaration = paramsInvocation.WithArgumentList(newArgListSyntax); SyntaxNode newRoot = null;
+            
+            var documentEditor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+            documentEditor.InsertBefore(forStatement, assignmentExpression);
+            documentEditor.ReplaceNode(paramsInvocation, newDeclaration);
+
+            var newDocument = documentEditor.GetChangedDocument();
+            var finalRoot = await newDocument.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            finalRoot = Formatter.Format(finalRoot, Formatter.Annotation, document.Project.Solution.Workspace);
+            return originalSolution.WithDocumentSyntaxRoot(document.Id, finalRoot);
         }
     }
 }
