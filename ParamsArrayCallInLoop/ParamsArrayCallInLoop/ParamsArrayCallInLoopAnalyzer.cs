@@ -46,10 +46,18 @@ namespace ParamsArrayCallInLoop
             var invocation = context.Node as InvocationExpressionSyntax;
             if (!(context.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol methodSymbol))
                 return;
+
+            if (!methodSymbol.ContainingType.ContainingNamespace.Name.Equals("System"))
+                return;
+
             if (methodSymbol.Parameters.Any() && methodSymbol.Parameters.Last().IsParams && (
                 IsInSyntax<ForEachStatementSyntax>(invocation) 
                 || IsInSyntax<ForStatementSyntax>(invocation)))
             {
+                if (context.SemanticModel.GetTypeInfo(invocation.ArgumentList.Arguments.Last().Expression).Type.Kind == SymbolKind.ArrayType 
+                    && invocation.ArgumentList.Arguments.Count == methodSymbol.Parameters.Length
+                    && !(invocation.ArgumentList.Arguments.Last().Expression is ArrayCreationExpressionSyntax)) // Array is used as params parameter
+                    return;
                 // For all such symbols, produce a diagnostic.
                 var diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), invocation.Expression);
 

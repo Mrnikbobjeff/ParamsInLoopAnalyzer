@@ -49,6 +49,53 @@ namespace ParamsArrayCallInLoop.Test
 
             VerifyCSharpDiagnostic(test, expected);
         }
+
+        [TestMethod]
+        public void ObjectParamsCall_ArrayParam_NoDiagnostic()
+        {
+            var test = @"
+    using System;
+
+    namespace ConsoleApplication1
+    {
+        class TypeName
+        {   
+            public void Test()
+            {
+                var hoisted = new object[]{1,2,3,4,5,6,7,8,9,0};
+                for(int i = 0; i < 100; i++)
+                {
+                    String.Format("""", hoisted);
+                };
+            }
+        }
+    }";
+            VerifyCSharpDiagnostic(test);
+        }
+
+        [TestMethod]
+        public void ObjectParamsCall_CustomNamespace_NoDiagnostic()
+        {
+            var test = @"
+    using System;
+
+    namespace ConsoleApplication1
+    {
+        class TypeName
+        {   
+            void Param(params object[] args) {}
+            public void Test()
+            {
+                for(int i = 0; i < 100; i++)
+                {
+                    Param(new object[]{1,2,3,4,5,6,7,8,9,0});
+                };
+            }
+        }
+    }";
+            VerifyCSharpDiagnostic(test);
+        }
+
         [TestMethod]
         public void ObjectParamsCall_LocalFunc_NoDiagnostic()
         {
