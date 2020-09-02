@@ -56,7 +56,7 @@ namespace ParamsArrayCallInLoop
             {
                 if (context.SemanticModel.GetTypeInfo(invocation.ArgumentList.Arguments.Last().Expression).Type.Kind == SymbolKind.ArrayType 
                     && invocation.ArgumentList.Arguments.Count == methodSymbol.Parameters.Length
-                    && !(invocation.ArgumentList.Arguments.Last().Expression is ArrayCreationExpressionSyntax)) // Array is used as params parameter
+                    && !(invocation.ArgumentList.Arguments.Last().Expression is ArrayCreationExpressionSyntax)) // Array is used as params parameter but newed
                     return;
                 // For all such symbols, produce a diagnostic.
                 var diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), invocation.Expression);
